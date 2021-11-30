@@ -34,24 +34,8 @@ void print_usage (FILE *stream, int exit_code)
     exit (exit_code);
 } /* procedure USAGE */
 
-int GetHex (const char *str)
-{
-    int result;
-    unsigned int value;
-
-    result = sscanf (str, "%x", &value);
-
-    if (result == 1)
-        return value;
-    else {
-        fprintf (stderr, "GetHex: some error occurred when parsing options.\n");
-        exit (1);
-    }
-}
-
 int main (int argc, char **argv)
 {
-
     int next_option;    //下一个要处理的参数符号
     int haveargv = 0;     //是否有我们要的正确参数，一个标识
     char *stop;
