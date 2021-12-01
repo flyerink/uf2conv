@@ -8,8 +8,6 @@
 
 #define PROGRAM "uf2conv.exe"
 
-#define _IS_OPTION_(x)   ((x) == '-')
-
 #define APP_START_ADDRESS   0x2000
 
 /*程序的名字*/
@@ -164,5 +162,6 @@ int main (int argc, char **argv)
     fclose (fout);
     fclose (fin);
     printf ("Wrote %d blocks to %s\n", numbl, output_filename);
+
     return 0;
 }
