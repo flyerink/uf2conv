@@ -5,3 +5,5 @@ obj
 
 *.bin
 *.uf2
+
+*.layout
