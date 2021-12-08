@@ -114,8 +114,8 @@ void parse_options (int argc, char *argv[])
         for (i = optind; i < argc; ++i)
             printf ("Argument: %s\n", argv[i]);
 
-        printf ("uf2conf, a tool for convert binary to uf2 format.\nVersion 0.1.2\n");
-        print_usage (stdout, 1);
+        printf ("uf2conf, a tool for convert binary to uf2 format.\nVersion 0.2.0\n");
+        print_usage (stdout, 0);
     }
 }
 
