@@ -169,5 +169,44 @@ int main (int argc, char **argv)
     fclose (fin);
     printf ("Wrote %d blocks to %s\n", numbl, output_filename);
 
+    {
+        DWORD dwSize = MAX_PATH;
+        char szLogicalDrives[MAX_PATH] = {0};
+        //获取逻辑驱动器号字符串
+        DWORD dwResult = GetLogicalDriveStrings (dwSize, szLogicalDrives);
+        //处理获取到的结果
+        if (dwResult > 0 && dwResult <= MAX_PATH) {
+            char *szSingleDrive = szLogicalDrives;  //从缓冲区起始地址开始
+            while (*szSingleDrive) {
+                /* 获取驱动器的类型，只处理可移动盘 */
+                if (GetDriveType (szSingleDrive) == DRIVE_REMOVABLE) {
+                    printf ("Removable Disk %s\n", szSingleDrive); //输出单个驱动器的驱动器号和类型
+
+                    char cFileAddr[300];
+                    struct _finddata_t fileinfo;    //文件存储信息结构体
+                    long fHandle;                   //保存文件句柄
+
+                    /* 检查驱动器中是否有INFO_UF2.TXT文件 */
+                    strncpy (cFileAddr, szSingleDrive, 200);
+                    strcpy (cFileAddr + strlen (szSingleDrive), "INFO_UF2.TXT");
+                    if ((fHandle = _findfirst (cFileAddr, &fileinfo )) != -1L ) {
+                        char pwd[128];
+                        char cmd[1024];
+                        printf ( "Find: %s, size %ld\n", fileinfo.name, fileinfo.size);
+                        getcwd (pwd, 500);
+                        sprintf (cmd, "copy %s\\%s %s", pwd, output_filename, szSingleDrive);
+                        printf ( "%s\n", cmd);
+                        system (cmd);
+                    }
+
+                    _findclose ( fHandle ); //关闭文件
+                }
+
+                // 获取下一个驱动器号起始地址
+                szSingleDrive += strlen (szSingleDrive) + 1;
+            }
+        }
+    }
+
     return 0;
 }
