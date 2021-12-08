@@ -5,6 +5,7 @@ obj
 
 *.bin
 *.uf2
+*.bat
 
 *.layout
 *.depend
