@@ -4,8 +4,7 @@
 #include <stdarg.h>
 #include <getopt.h>
 
-#include <Windows.h>
-#include <fileapi.h>
+#include <windows.h>
 #include <io.h>
 
 #include "uf2format.h"
