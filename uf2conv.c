@@ -17,7 +17,7 @@
 const char *program_name = PROGRAM;
 
 /* 此参数用于承放指定的参数，默认为空 */
-const char *input_filename = "flash.bin";
+const char *input_filename = NULL;
 const char *output_filename = "flash.uf2";
 
 uint32_t app_start_addr = APP_START_ADDRESS;
@@ -25,10 +25,10 @@ uint32_t app_start_addr = APP_START_ADDRESS;
 /* 打印程序参数 */
 void print_usage (FILE *stream, int exit_code)
 {
-    fprintf (stream, "\nusage: %s [-s address] [-i flash.bin] [-o flash.uf2]\n", program_name);
+    fprintf (stream, "\nusage: %s [-s address] -i flash.bin [-o flash.uf2]\n", program_name);
     fprintf (stream, "Options:\n"
              "  -s --start address      Starting address in hex for binary file (default: 2000)\n"
-             "  -i --input flash.bin    Set the input file name to be convert, default: flash.bin\n"
+             "  -i --input flash.bin    Set the input file name to be convert, mandatory\n"
              "  -o --output flash.uf2   Set the output file name, default: flash.uf2\n"
              "  -h --help               Display help information\n"
              "  -v --version            Show the program version\n\n");
@@ -114,7 +114,7 @@ void parse_options (int argc, char *argv[])
         for (i = optind; i < argc; ++i)
             printf ("Argument: %s\n", argv[i]);
 
-        printf ("uf2conf, a tool for convert binary to uf2 format.\nVersion 0.2.0\n");
+        printf ("uf2conf, a tool for convert binary to uf2 format.\nVersion 0.2.1\n");
         print_usage (stdout, 0);
     }
 }
@@ -130,13 +130,18 @@ int main (int argc, char **argv)
     /* argv[0]始终指向可执行的文件文件名 */
     program_name = argv[0];
 
+    if (input_filename == NULL) {
+        fprintf (stdout, "Need set input file, exit\n");
+        print_usage (stdout, 1);
+    }
+
     printf ("Input file: %s\n", input_filename);
     printf ("Output file: %s\n", output_filename);
     printf ("Start Address: %X\n", app_start_addr);
 
     FILE *fin = fopen (input_filename, "rb");
     if (!fin) {
-        fprintf (stderr, "No such file: %s\n", input_filename);
+        fprintf (stdout, "No such file: %s\n", input_filename);
         return 1;
     }
 
