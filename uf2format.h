@@ -39,7 +39,8 @@ SOFTWARE.
 #define UF2_MAGIC_END       0x0AB16F30UL // Ditto
 
 // If set, the block is "comment" and should not be flashed to the device
-#define UF2_FLAG_NOFLASH    0x00000001
+#define UF2_FLAG_NOFLASH            0x00000001
+#define UF2_FLAG_FAMILYID_PRESENT   0x00002000
 
 typedef struct {
     // 32 byte header
@@ -50,7 +51,7 @@ typedef struct {
     uint32_t payloadSize;
     uint32_t blockNo;
     uint32_t numBlocks;
-    uint32_t reserved;
+    uint32_t familyID;
 
     // raw data;
     uint8_t data[476];

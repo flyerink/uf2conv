@@ -21,14 +21,48 @@ const char *input_filename = NULL;
 const char *output_filename = "flash.uf2";
 
 uint32_t app_start_addr = APP_START_ADDRESS;
+uint32_t family_id = 0x0;
+
+typedef struct {
+    const char name[16];
+    uint32_t id;
+} families_t;
+
+const families_t families[] = {
+    {"SAMD21",      0x68ed2b88 },
+    {"SAML21",      0x1851780a },
+    {"SAMD51",      0x55114460 },
+    {"NRF52",       0x1b57745f },
+    {"STM32F1",     0x5ee21072 },
+    {"STM32F4",     0x57755a57 },
+    {"ATMEGA32",    0x16573617 },
+    {"MIMXRT10XX",  0x4FB2D5BD }
+};
+
+#define FAMILY_MAX      (sizeof(families) / sizeof(families_t))
+
+uint32_t get_family_id(const char *name){
+    uint32_t id = 0;
+    int i;
+
+    for (i = 0; i< FAMILY_MAX; i++){
+        if(strncmp(name, families[i].name, strlen(families[i].name)) == 0){
+            id = families[i].id;
+            break;
+        }
+    }
+
+    return id;
+}
 
 /* 打印程序参数 */
 void print_usage (FILE *stream, int exit_code)
 {
-    fprintf (stream, "\nusage: %s [-s address] -i flash.bin [-o flash.uf2]\n", program_name);
+    fprintf (stream, "\nusage: %s [-f family] [-b address] [-o flash.uf2] flash.bin \n", program_name);
     fprintf (stream, "Options:\n"
-             "  -s --start address      Starting address in hex for binary file (default: 2000)\n"
-             "  -i --input flash.bin    Set the input file name to be convert, mandatory\n"
+             "  -b --base address       Set base address of application for BIN format (default: 0x2000)\n"
+             "  -f --family SAMD21/SAML21/SAMD51/NRF52/STM32F1/STM32F4/ATMEGA32/MIMXRT10XX\n"
+             "                          Set the device family name, (default: 0)\n"
              "  -o --output flash.uf2   Set the output file name, default: flash.uf2\n"
              "  -h --help               Display help information\n"
              "  -v --version            Show the program version\n\n");
@@ -40,16 +74,15 @@ void parse_options (int argc, char *argv[])
 {
     int next_option;    // 下一个要处理的参数符号
     int haveargv = 0;   // 是否有我们要的正确参数，一个标识
-    char *stop;
 
     /* 包含短选项字符的字符串，注意这里的‘:’ */
-    const char *const short_options = "s:i:o:vh";
+    const char *const short_options = "f:b:o:vh";
 
     /* 标识长选项和对应的短选项的数组 */
     const struct option long_options[] = {
         { "help",       0,  NULL,   'h' },
-        { "start",      1,  NULL,   's' },
-        { "input",      1,  NULL,   'i' },
+        { "family",     1,  NULL,   'f' },
+        { "base",       1,  NULL,   'b' },
         { "output",     1,  NULL,   'o' },
         { "version",    0,  NULL,   'v' },
         { NULL,         0,  NULL,    0  }   // 最后一个元素标识为NULL
@@ -65,16 +98,16 @@ void parse_options (int argc, char *argv[])
             case 'h':                /* -h or --help */
                 haveargv = 1;
                 print_usage (stdout, 1);
+                break;
 
-            case 's':                /* -s or --start */
-                /* 此时optarg指向--start后的address, 16进制数 */
-                app_start_addr = strtol (optarg, &stop, 16);
+            case 'f':
+                family_id = get_family_id(optarg);
                 haveargv = 1;
                 break;
 
-            case 'i':                /* -i or --input */
-                /* 此时optarg指向--input后的filename */
-                input_filename = optarg;
+            case 'b':                /* -s or --start */
+                /* 此时optarg指向--base后的address, 16进制数 */
+                app_start_addr = strtol (optarg, NULL, 16);
                 haveargv = 1;
                 break;
 
@@ -114,7 +147,8 @@ void parse_options (int argc, char *argv[])
         for (i = optind; i < argc; ++i)
             printf ("Argument: %s\n", argv[i]);
 
-        printf ("uf2conf, a tool for convert binary to uf2 format.\nVersion 0.2.1\n");
+        printf ("\nuf2conf, for Windows only, version 1.1.0\n");
+        printf ("A tools for convert bin file to uf2 format.\nIf target board already in bootloader mode, auto copy uf2 into the bootloader\n");
         print_usage (stdout, 0);
     }
 }
@@ -127,6 +161,11 @@ int main (int argc, char **argv)
 
     parse_options (argc, argv);
 
+    if(argc > optind){
+        /* 此时optarg指向--input后的filename */
+        input_filename = argv[optind];
+    }
+
     /* argv[0]始终指向可执行的文件文件名 */
     program_name = argv[0];
 
@@ -137,7 +176,7 @@ int main (int argc, char **argv)
 
     printf ("Input file: %s\n", input_filename);
     printf ("Output file: %s\n", output_filename);
-    printf ("Start Address: %X\n", app_start_addr);
+    printf ("Base Address: %X\n", app_start_addr);
 
     FILE *fin = fopen (input_filename, "rb");
     if (!fin) {
@@ -159,6 +198,11 @@ int main (int argc, char **argv)
     bl.magicEnd = UF2_MAGIC_END;
     bl.targetAddr = app_start_addr;
     bl.numBlocks = (sz + 255) / 256;
+    if(family_id != 0) {
+        printf ("Family ID: %X\n", family_id);
+        bl.flags |= UF2_FLAG_FAMILYID_PRESENT;
+        bl.familyID = family_id;
+    }
     bl.payloadSize = 256;
     int numbl = 0;
     while (fread (bl.data, 1, bl.payloadSize, fin)) {
@@ -173,7 +217,7 @@ int main (int argc, char **argv)
     fclose (fin);
     printf ("Wrote %d blocks to %s\n", numbl, output_filename);
 
-    {
+    do {
         DWORD dwSize = MAX_PATH;
         char szLogicalDrives[MAX_PATH] = {0};
         //获取逻辑驱动器号字符串
@@ -186,18 +230,18 @@ int main (int argc, char **argv)
                 if (GetDriveType (szSingleDrive) == DRIVE_REMOVABLE) {
                     printf ("Removable Disk %s\n", szSingleDrive); //输出单个驱动器的驱动器号和类型
 
-                    char cFileAddr[300];
+                    char cFileAddr[512];
                     struct _finddata_t fileinfo;    //文件存储信息结构体
                     long fHandle;                   //保存文件句柄
 
                     /* 检查驱动器中是否有INFO_UF2.TXT文件 */
-                    strncpy (cFileAddr, szSingleDrive, 200);
+                    strncpy (cFileAddr, szSingleDrive, strlen (szSingleDrive));
                     strcpy (cFileAddr + strlen (szSingleDrive), "INFO_UF2.TXT");
                     if ((fHandle = _findfirst (cFileAddr, &fileinfo )) != -1L ) {
-                        char pwd[128];
-                        char cmd[1024];
+                        char pwd[512];
+                        char cmd[2048];
                         printf ( "Find: %s, size %ld\n", fileinfo.name, fileinfo.size);
-                        getcwd (pwd, 500);
+                        getcwd (pwd, 512);
                         sprintf (cmd, "copy %s\\%s %s", pwd, output_filename, szSingleDrive);
                         printf ( "%s\n", cmd);
                         system (cmd);
@@ -210,7 +254,7 @@ int main (int argc, char **argv)
                 szSingleDrive += strlen (szSingleDrive) + 1;
             }
         }
-    }
+    } while (0);
 
     return 0;
 }
