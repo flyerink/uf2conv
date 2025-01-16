@@ -10,6 +10,7 @@
 #include "uf2format.h"
 
 #define PROGRAM "uf2conv.exe"
+#define VERSION "0.3.0"
 
 #define APP_START_ADDRESS   0x2000
 
@@ -58,6 +59,7 @@ uint32_t get_family_id(const char *name){
 /* 打印程序参数 */
 void print_usage (FILE *stream, int exit_code)
 {
+    fprintf (stream, "\n%s: version %s, a tools for convert bin to uf2 \n", program_name, VERSION);
     fprintf (stream, "\nusage: %s [-f family] [-b address] [-o flash.uf2] flash.bin \n", program_name);
     fprintf (stream, "Options:\n"
              "  -b --base address       Set base address of application for BIN format (default: 0x2000)\n"
@@ -230,7 +232,7 @@ int main (int argc, char **argv)
                 if (GetDriveType (szSingleDrive) == DRIVE_REMOVABLE) {
                     printf ("Removable Disk %s\n", szSingleDrive); //输出单个驱动器的驱动器号和类型
 
-                    char cFileAddr[512];
+                    char cFileAddr[2048];
                     struct _finddata_t fileinfo;    //文件存储信息结构体
                     long fHandle;                   //保存文件句柄
 
@@ -238,7 +240,7 @@ int main (int argc, char **argv)
                     strncpy (cFileAddr, szSingleDrive, strlen (szSingleDrive));
                     strcpy (cFileAddr + strlen (szSingleDrive), "INFO_UF2.TXT");
                     if ((fHandle = _findfirst (cFileAddr, &fileinfo )) != -1L ) {
-                        char pwd[512];
+                        char pwd[2048];
                         char cmd[2048];
                         printf ( "Find: %s, size %ld\n", fileinfo.name, fileinfo.size);
                         getcwd (pwd, 512);
