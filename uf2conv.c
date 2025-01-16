@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <io.h>
 
-#include "uf2format.h"
+#include "uf2.h"
 
 #define PROGRAM "uf2conv.exe"
 #define VERSION "0.3.0"
@@ -35,9 +35,37 @@ const families_t families[] = {
     {"SAMD51",      0x55114460 },
     {"NRF52",       0x1b57745f },
     {"STM32F1",     0x5ee21072 },
+    {"STM32F2",     0x5d1a0a2e },
+    {"STM32F3",     0x6b846188 },
     {"STM32F4",     0x57755a57 },
+    {"STM32F7",     0x53b80f00 },
+    {"STM32G0",     0x300f5633 },
+    {"STM32G4",     0x4c71240a },
+    {"STM32L0",     0x202e3a91 },
+    {"STM32L1",     0x1e1f432d },
+    {"STM32L4",     0x00ff6919 },
+    {"STM32L5",     0x04240bdf },
+    {"STM32H5",     0x4e8f1c5d },
+    {"STM32H7",     0x6db66082 },
     {"ATMEGA32",    0x16573617 },
-    {"MIMXRT10XX",  0x4FB2D5BD }
+    {"MIMXRT10XX",  0x4FB2D5BD },
+    {"ESP8266",     0x7eab61ed },
+    {"ESP32",       0x1c5f21b0 },
+    {"ESP32S2",     0xbfdd4eee },
+    {"ESP32S3",     0xc47e5767 },
+    {"ESP32C2",     0x2b88d29c },
+    {"ESP32C3",     0xd42ba06c },
+    {"ESP32C5",     0xf71c0343 },
+    {"ESP32C6",     0x540ddf62 },
+    {"ESP32C61",    0x77d850c4 },
+    {"ESP32H2",     0x332726f6 },
+    {"ESP32P4",     0x3d308e94 },
+    {"RP2040",      0xe48bff56 },
+    {"RP2040",      0xe48bff56 },
+    {"RP2350_ARM_S",0xe48bff59 },
+    {"RP2350_ARM_NS",0xe48bff5b },
+    {"RP2350_RISCV",0xe48bff5a },
+    {"CH32V",       0x699b62ec },
 };
 
 #define FAMILY_MAX      (sizeof(families) / sizeof(families_t))
@@ -202,8 +230,8 @@ int main (int argc, char **argv)
     bl.numBlocks = (sz + 255) / 256;
     if(family_id != 0) {
         printf ("Family ID: %X\n", family_id);
-        bl.flags |= UF2_FLAG_FAMILYID_PRESENT;
-        bl.familyID = family_id;
+        bl.flags |= UF2_FLAG_FAMILY_ID;
+        bl.reserved = family_id;
     }
     bl.payloadSize = 256;
     int numbl = 0;
